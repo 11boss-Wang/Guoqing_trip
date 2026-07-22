@@ -101,7 +101,7 @@
       padding: 26px;
       min-height: 270px;
     }
-    .label, .cost-item span, .flight span, .people span {
+    .label, .cost-item span, .flight span, .people span, .person-card span, .plan-block span {
       display: block;
       color: #65736f;
       font-size: 13px;
@@ -180,7 +180,7 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
     }
-    .cost-item, .flight, .day, .people article {
+    .cost-item, .flight, .day, .people article, .person-card, .person-detail {
       background: var(--paper);
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -235,6 +235,55 @@
       margin: 8px 0;
     }
     .people small { color: var(--accent); font-weight: 800; }
+    .personal-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .person-card {
+      text-align: left;
+      color: var(--ink);
+      transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+    }
+    .person-card:hover, .person-card.active {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+      box-shadow: 0 18px 40px rgba(34, 31, 26, .12);
+    }
+    .person-card strong {
+      display: block;
+      font-size: 28px;
+      margin: 8px 0;
+    }
+    .person-card small {
+      color: var(--accent);
+      font-weight: 800;
+    }
+    .person-detail {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .person-detail h3 {
+      grid-column: 1 / -1;
+      font-size: 28px;
+      margin-bottom: 0;
+    }
+    .plan-block {
+      border-left: 4px solid var(--accent);
+      padding-left: 14px;
+    }
+    .plan-block strong {
+      display: block;
+      margin: 8px 0;
+      font-size: 20px;
+    }
+    .plan-block p {
+      margin-bottom: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
     .sources { padding-bottom: 70px; }
     .sources p {
       border-left: 4px solid var(--accent);
@@ -248,7 +297,7 @@
     }
     @media (max-width: 900px) {
       .hero { min-height: 92vh; }
-      .hero-grid, .controls, .two-col, .flight-grid, .people { grid-template-columns: 1fr; }
+      .hero-grid, .controls, .two-col, .flight-grid, .people, .personal-grid, .person-detail { grid-template-columns: 1fr; }
       .section-heading { display: block; }
       .switcher, .segmented { grid-auto-flow: row; width: 100%; }
       .switcher button, .segmented button, .toggle { width: 100%; }
@@ -336,13 +385,11 @@
 
     <section class="band people">
       <div class="section-heading">
-        <h2>&#x6210;&#x5458;&#x5B89;&#x6392;</h2>
-        <p>&#x9ED8;&#x8BA4;&#x4E24;&#x95F4;&#x623F;&#x3001;&#x56DB;&#x4EBA;&#x540C;&#x884C;&#xFF0C;&#x51FA;&#x53D1;&#x5730;&#x4E0D;&#x540C;&#x4F46;&#x5C3D;&#x91CF;&#x5728;&#x7B2C;&#x4E00;&#x665A;&#x5B8C;&#x6210;&#x6C47;&#x5408;&#x3002;</p>
+        <h2>成员个人计划</h2>
+        <p>点击自己的姓名卡片，可以看到各自的到达航班、离开航班、汇合方式和单人预算提醒。</p>
       </div>
-      <article><span>&#x5317;&#x4EAC; A</span><strong>&#x5317;&#x4EAC;</strong><small>PEK/PKX</small></article>
-      <article><span>&#x5317;&#x4EAC; B</span><strong>&#x5317;&#x4EAC;</strong><small>PEK/PKX</small></article>
-      <article><span>&#x6210;&#x90FD;</span><strong>&#x6210;&#x90FD;</strong><small>TFU/CTU</small></article>
-      <article><span>&#x8377;&#x5170;</span><strong>&#x8377;&#x5170;</strong><small>AMS</small></article>
+      <div class="personal-grid" id="personCards"></div>
+      <div class="person-detail" id="personDetail"></div>
     </section>
 
     <section class="band sources">
@@ -353,7 +400,75 @@
 
   <script>
     const hotelMultipliers = { comfort: 0.82, premium: 1, splurge: 1.38 };
-    const state = { destination: "maldives", hotelTier: "premium", activityLevel: 1, buffer: 12, showFlights: true };
+    const state = { destination: "maldives", hotelTier: "premium", activityLevel: 1, buffer: 12, showFlights: true, selectedPerson: "wanghui" };
+    const people = [
+      { id: "wanghui", name: "王慧", from: "北京", airport: "PEK/PKX", role: "北京同行 1", room: "建议与刘博文同住一间，便于同步出发和转机。" },
+      { id: "liubowen", name: "刘博文", from: "北京", airport: "PEK/PKX", role: "北京同行 2", room: "建议与王慧同住一间，机票尽量买同一票号。" },
+      { id: "wangxueying", name: "王雪莹", from: "成都", airport: "TFU/CTU", role: "成都出发", room: "建议与王禹或单独协调房型，优先选可免费取消酒店。" },
+      { id: "wangyu", name: "王禹", from: "荷兰", airport: "AMS", role: "荷兰出发", room: "注意申根返程、银行卡可用性和国际漫游。" }
+    ];
+    const personPlans = {
+      maldives: {
+        wanghui: {
+          arrive: "10月1日 北京 PEK/PKX -> 马累 MLE。优先查新加坡航空经新加坡、阿提哈德经阿布扎比、东航/南航经上海或广州；目标10月1日傍晚前抵达马累。",
+          depart: "10月7日 马累 MLE -> 北京 PEK/PKX。建议订21:00后夜航或10月8日凌晨航班，给快艇/水飞回马累留足缓冲。",
+          meet: "与刘博文同一航班最好；到达后直接去 Hulhumale 过渡酒店，等待成都和荷兰成员汇合。",
+          cost: "机票预算约 ¥5,000 - ¥7,200；个人总预算约为四人总预算的 25%。",
+          note: "行李建议 24寸箱 + 防晒衣 + 浮潜袜；北京两人可共用转换插头、药品和水下相机。"
+        },
+        liubowen: {
+          arrive: "10月1日 北京 PEK/PKX -> 马累 MLE。建议与王慧同航班；若价格差明显，可选同日不同中转但抵达时间不晚于22:00。",
+          depart: "10月7日 马累 MLE -> 北京 PEK/PKX。返程尽量和王慧同票，避免马累机场夜间分头等待。",
+          meet: "北京两人先在首都/大兴机场集合；抵达马累后负责核对快艇或水飞接驳时间。",
+          cost: "机票预算约 ¥5,000 - ¥7,200；潜水/海钓等自选项目建议另留 ¥800 - ¥1,500。",
+          note: "如果想体验深潜，提前确认是否需要体验潜水课程；近视可准备有度数潜水面镜。"
+        },
+        wangxueying: {
+          arrive: "10月1日 成都 TFU/CTU -> 马累 MLE。优先查川航直飞季节班、东航经上海、南航经广州或新加坡航空中转；目标与北京两人同晚抵达。",
+          depart: "10月7日 马累 MLE -> 成都 TFU/CTU。若没有合适直飞，优先选同一中转城市往返，减少行李风险。",
+          meet: "抵达 MLE 后在到达大厅集合；若晚到，先由酒店安排接机，第二天早上统一上岛。",
+          cost: "机票预算约 ¥5,200 - ¥7,600；成都单独出发建议多留 ¥500 机票波动缓冲。",
+          note: "成都出发中转时间建议不少于2.5小时；国庆机场人多，尽量提前3小时到机场。"
+        },
+        wangyu: {
+          arrive: "9月30日或10月1日 阿姆斯特丹 AMS -> 马累 MLE。优先查阿提哈德经阿布扎比、卡塔尔经多哈、阿联酋经迪拜；建议比国内成员早到或同日下午抵达。",
+          depart: "10月7日 马累 MLE -> 阿姆斯特丹 AMS。建议选择中东航司同联盟/同票号，避免分段转机风险。",
+          meet: "国际长线成员最容易受转机影响，建议在 Hulhumale 住第一晚，不安排当天上岛。",
+          cost: "机票预算约 ¥5,500 - ¥8,200；另留欧洲出发旅行保险和漫游费用约 ¥500 - ¥1,000。",
+          note: "确认护照有效期、荷兰返程入境材料和银行卡境外支付；建议带欧标/英标兼容转换头。"
+        }
+      },
+      russia: {
+        wanghui: {
+          arrive: "10月1日 北京 PEK/PKX -> 莫斯科 SVO/DME/VKO。优先查国航、海航或中转航班，目标当地下午到达，晚上红场汇合。",
+          depart: "10月7日 莫斯科 -> 北京。若从圣彼得堡返程不方便，10月6日晚高铁回莫斯科，10月7日返航。",
+          meet: "与刘博文同航班最省心；抵达后直接坐机场快线/网约车到莫斯科市中心酒店。",
+          cost: "机票预算约 ¥4,800 - ¥7,100；俄罗斯线个人预算更低，但现金和保险缓冲要足。",
+          note: "提前核对签证/电子签规则、支付方式和手机漫游；俄罗斯线建议带少量现金。"
+        },
+        liubowen: {
+          arrive: "10月1日 北京 PEK/PKX -> 莫斯科。建议与王慧同航班；直飞优先，避免中转国家签证和行李问题。",
+          depart: "10月7日 莫斯科 -> 北京。返程与王慧同行，预留3小时以上机场时间。",
+          meet: "北京两人负责把莫斯科酒店入住信息、火车票二维码和地铁路线提前截图离线保存。",
+          cost: "机票预算约 ¥4,800 - ¥7,100；莫斯科/圣彼得堡门票和高铁约 ¥1,500 - ¥2,300。",
+          note: "如果想看军事/历史博物馆，需提前确认开放状态；不要临时携带敏感航拍设备。"
+        },
+        wangxueying: {
+          arrive: "10月1日 成都 TFU/CTU -> 莫斯科。优先查直飞或经北京/乌鲁木齐/伊斯坦布尔中转；目标当天夜里前抵达。",
+          depart: "10月7日 莫斯科 -> 成都。若中转回程，避免低于2小时的国际转机。",
+          meet: "若比北京两人晚到，先独立到酒店；第二天克里姆林宫集合出发。",
+          cost: "机票预算约 ¥4,700 - ¥6,900；建议额外预留 ¥600 给中转住宿或改签风险。",
+          note: "成都单独出发最好购买可改签机票；提前把俄文酒店地址和护照页存在手机相册。"
+        },
+        wangyu: {
+          arrive: "10月1日 阿姆斯特丹 AMS -> 莫斯科。多数路线需经贝尔格莱德或伊斯坦布尔中转；建议买同票号联程。",
+          depart: "10月7日 莫斯科 -> 阿姆斯特丹 AMS。尽量选白天抵达阿姆斯特丹，避免深夜返家交通问题。",
+          meet: "欧洲出发成员需重点核对荷兰旅行建议、保险免责条款和支付限制；抵达后在酒店汇合。",
+          cost: "机票预算约 ¥4,800 - ¥7,900；俄罗斯线建议王禹单独增加 ¥1,000 - ¥1,500 风险缓冲。",
+          note: "荷兰出发需特别关注旅行警示、银行卡在俄使用限制，以及返程航班是否受制裁/绕飞影响。"
+        }
+      }
+    };
     const destinations = {
       maldives: {
         label: "&#x9A6C;&#x5C14;&#x4EE3;&#x592B;",
@@ -489,6 +604,23 @@
           <strong>${money(day[3] * state.activityLevel)}</strong>
         </article>
       `).join("");
+      document.getElementById("personCards").innerHTML = people.map(person => `
+        <button class="person-card ${state.selectedPerson === person.id ? "active" : ""}" type="button" data-person="${person.id}">
+          <span>${person.role}</span>
+          <strong>${person.name}</strong>
+          <small>${person.from} · ${person.airport}</small>
+        </button>
+      `).join("");
+      const person = people.find(item => item.id === state.selectedPerson);
+      const plan = personPlans[state.destination][state.selectedPerson];
+      document.getElementById("personDetail").innerHTML = `
+        <h3>${person.name}的单独计划</h3>
+        <div class="plan-block"><span>到达航班</span><strong>${person.from}出发</strong><p>${plan.arrive}</p></div>
+        <div class="plan-block"><span>离开航班</span><strong>10月7日返程</strong><p>${plan.depart}</p></div>
+        <div class="plan-block"><span>汇合安排</span><strong>${state.destination === "maldives" ? "马累 MLE" : "莫斯科市中心"}</strong><p>${plan.meet}</p></div>
+        <div class="plan-block"><span>个人预算</span><strong>${plan.cost}</strong><p>${person.room} ${plan.note}</p></div>
+      `;
+      document.querySelectorAll("[data-person]").forEach(btn => btn.addEventListener("click", () => { state.selectedPerson = btn.dataset.person; render(); }));
       document.getElementById("sources").innerHTML = data.sources.map(source => `<p>${source}</p>`).join("");
     }
 
