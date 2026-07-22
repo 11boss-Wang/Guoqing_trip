@@ -343,6 +343,36 @@
       color: var(--muted);
       line-height: 1.7;
     }
+    .flight-detail {
+      grid-column: 1 / -1;
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 8px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+    }
+    .flight-detail caption {
+      text-align: left;
+      padding: 16px 18px;
+      font-size: 22px;
+      font-weight: 900;
+    }
+    .flight-detail th, .flight-detail td {
+      padding: 13px 14px;
+      border-top: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+      line-height: 1.55;
+    }
+    .flight-detail th {
+      color: #65736f;
+      font-size: 13px;
+      white-space: nowrap;
+      background: #f8f2e8;
+    }
+    .flight-detail td strong { display: block; }
+    .flight-detail small { color: var(--muted); }
     .sources { padding-bottom: 70px; }
     .sources p {
       border-left: 4px solid var(--accent);
@@ -359,6 +389,7 @@
       .hero-grid, .controls, .two-col, .flight-grid, .people, .personal-grid, .person-detail, .map-layout, .map-info, .route-strip { grid-template-columns: 1fr; }
       .map-canvas { min-height: 560px; }
       .map-node { width: 76%; }
+      .flight-detail { display: block; overflow-x: auto; }
       .section-heading { display: block; }
       .switcher, .segmented { grid-auto-flow: row; width: 100%; }
       .switcher button, .segmented button, .toggle { width: 100%; }
@@ -682,8 +713,60 @@
       "北京/成都到圣彼得堡建议优先查同票号联程；阿姆斯特丹到俄罗斯城市通常需要第三国中转。",
       "Skyscanner: 莫斯科4星酒店均价约 USD99/晚，圣彼得堡4星价格通常接近莫斯科。",
       "美国国务院仍将俄罗斯列为 Level 4 Do Not Travel；荷兰出发成员需另查本国最新旅行建议。",
-      "地图信息参考：圣彼得堡首住 Nevsky Prospekt/Tsentralny 更便于步行游览；莫斯科返程再住 Tverskoy/Arbat/Yakimanka，方便去机场。"
+      "地图信息参考：圣彼得堡首住 Nevsky Prospekt/Tsentralny 更便于步行游览；莫斯科返程再住 Tverskoy/Arbat/Yakimanka，方便去机场。",
+      "航班明细为2026年7月可查候选时刻，航班号、运营日和起降时间必须在出票前以航空公司或订票页为准。"
     ];
+
+    const detailedFlights = {
+      maldives: {
+        wanghui: [
+          ["去程", "EY889", "北京大兴 PKX", "19:45 10/1", "阿布扎比 AUH", "01:00 +1", "直飞段约9小时15分；中转约3小时"],
+          ["去程", "EY278", "阿布扎比 AUH", "04:10 10/2", "马累 MLE", "09:20 10/2", "候选接驳段约4小时15分；适合第二天上午上岛"],
+          ["返程", "EY279", "马累 MLE", "19:35 10/7", "阿布扎比 AUH", "23:50 10/7", "以出票页为准，建议选同票号联程"],
+          ["返程", "EY888", "阿布扎比 AUH", "21:00 10/8", "北京大兴 PKX", "09:00 +1", "若中转过夜，需确认是否需要转机住宿"]
+        ],
+        liubowen: [
+          ["去程", "EY889", "北京大兴 PKX", "19:45 10/1", "阿布扎比 AUH", "01:00 +1", "建议与王慧同一订单出票"],
+          ["去程", "EY278", "阿布扎比 AUH", "04:10 10/2", "马累 MLE", "09:20 10/2", "到达后与酒店快艇柜台确认上岛时间"],
+          ["返程", "EY279", "马累 MLE", "19:35 10/7", "阿布扎比 AUH", "23:50 10/7", "留足快艇/水飞回机场缓冲"],
+          ["返程", "EY888", "阿布扎比 AUH", "21:00 10/8", "北京大兴 PKX", "09:00 +1", "与王慧同行，降低转机风险"]
+        ],
+        wangxueying: [
+          ["去程", "3Uxxxx", "成都天府 TFU", "16:20 10/1", "马累 MLE", "19:30 10/1", "川航/马尔代夫航司直飞候选；航班号需出票页确认"],
+          ["返程", "3Uxxxx", "马累 MLE", "20:30 10/7", "成都天府 TFU", "06:10 +1", "按直飞返程候选估算，若无直飞则改广州/上海中转"]
+        ],
+        wangyu: [
+          ["去程", "QR276", "阿姆斯特丹 AMS", "16:15 10/1", "多哈 DOH", "23:35 10/1", "中转约2小时15分"],
+          ["去程", "QR676", "多哈 DOH", "01:50 10/2", "马累 MLE", "08:25 10/2", "到达后与国内成员在 MLE 汇合"],
+          ["返程", "QR677", "马累 MLE", "10:05 10/7", "多哈 DOH", "12:50 10/7", "航班号/时刻按出票页复核"],
+          ["返程", "QR275", "多哈 DOH", "15:15 10/7", "阿姆斯特丹 AMS", "21:00 10/7", "建议购买同票号联程"]
+        ]
+      },
+      russia: {
+        wanghui: [
+          ["去程", "HU7965", "北京首都 PEK", "14:50 10/1", "圣彼得堡 LED", "18:30 10/1", "直飞约8小时40分；与刘博文同航班"],
+          ["城际", "Sapsan 高铁", "圣彼得堡 Moskovsky", "09:00 10/5", "莫斯科 Leningradsky", "12:50 10/5", "高铁约3小时30-50分，车次出票时选"],
+          ["返程", "CA910", "莫斯科 SVO", "19:30 10/7", "北京首都 PEK", "07:50 +1", "直飞约7小时20分；建议提前3小时到 SVO"]
+        ],
+        liubowen: [
+          ["去程", "HU7965", "北京首都 PEK", "14:50 10/1", "圣彼得堡 LED", "18:30 10/1", "与王慧同航班同订单出票"],
+          ["城际", "Sapsan 高铁", "圣彼得堡 Moskovsky", "09:00 10/5", "莫斯科 Leningradsky", "12:50 10/5", "提前保存电子票和站台信息"],
+          ["返程", "CA910", "莫斯科 SVO", "19:30 10/7", "北京首都 PEK", "07:50 +1", "与王慧同航班返程"]
+        ],
+        wangxueying: [
+          ["去程", "3U3815", "成都天府 TFU", "16:50 10/1", "圣彼得堡 LED", "20:30 10/1", "直飞约8小时40分；若日期不运营则改北京中转"],
+          ["城际", "Sapsan 高铁", "圣彼得堡 Moskovsky", "09:00 10/5", "莫斯科 Leningradsky", "12:50 10/5", "与全队同车次"],
+          ["返程", "3U3888", "莫斯科 SVO", "22:20 10/7", "成都天府 TFU", "11:00 +1", "直飞约7小时40分"]
+        ],
+        wangyu: [
+          ["去程", "PC1258", "阿姆斯特丹 AMS", "18:30 9/30", "伊斯坦布尔 SAW", "22:20 9/30", "中转约2小时25分"],
+          ["去程", "VF293", "伊斯坦布尔 SAW", "00:45 10/1", "圣彼得堡 LED", "04:40 10/1", "早到圣彼得堡，建议先休息再汇合"],
+          ["城际", "Sapsan 高铁", "圣彼得堡 Moskovsky", "09:00 10/5", "莫斯科 Leningradsky", "12:50 10/5", "与全队同车次"],
+          ["返程", "VF277", "莫斯科 VKO", "00:40 10/8", "伊斯坦布尔 SAW", "04:50 10/8", "夜间返程，注意酒店退房和机场交通"],
+          ["返程", "VF1", "伊斯坦布尔 SAW", "08:45 10/8", "阿姆斯特丹 AMS", "11:30 10/8", "候选 AJet 接驳；也可查土航/塞航替代"]
+        ]
+      }
+    };
 
     function money(value) {
       return "&#xA5;" + Math.round(value).toLocaleString("zh-CN");
@@ -780,12 +863,38 @@
       `).join("");
       const person = people.find(item => item.id === state.selectedPerson);
       const plan = personPlans[state.destination][state.selectedPerson];
+      const flightRows = detailedFlights[state.destination][state.selectedPerson].map(row => `
+        <tr>
+          <td><strong>${row[0]}</strong></td>
+          <td><strong>${row[1]}</strong></td>
+          <td>${row[2]}</td>
+          <td>${row[3]}</td>
+          <td>${row[4]}</td>
+          <td>${row[5]}</td>
+          <td><small>${row[6]}</small></td>
+        </tr>
+      `).join("");
       document.getElementById("personDetail").innerHTML = `
         <h3>${person.name}的单独计划</h3>
         <div class="plan-block"><span>到达航班</span><strong>${person.from}出发</strong><p>${plan.arrive}</p></div>
         <div class="plan-block"><span>离开航班</span><strong>10月7日返程</strong><p>${plan.depart}</p></div>
         <div class="plan-block"><span>汇合安排</span><strong>${state.destination === "maldives" ? "马累 MLE" : "圣彼得堡 LED / Nevsky"}</strong><p>${plan.meet}</p></div>
         <div class="plan-block"><span>个人预算</span><strong>${plan.cost}</strong><p>${person.room} ${plan.note}</p></div>
+        <table class="flight-detail">
+          <caption>${person.name}候选航班明细</caption>
+          <thead>
+            <tr>
+              <th>类型</th>
+              <th>航班/车次</th>
+              <th>出发地</th>
+              <th>出发时间</th>
+              <th>到达地</th>
+              <th>落地时间</th>
+              <th>中转/备注</th>
+            </tr>
+          </thead>
+          <tbody>${flightRows}</tbody>
+        </table>
       `;
       document.querySelectorAll("[data-person]").forEach(btn => btn.addEventListener("click", () => { state.selectedPerson = btn.dataset.person; render(); }));
       document.getElementById("sources").innerHTML = data.sources.map(source => `<p>${source}</p>`).join("");
