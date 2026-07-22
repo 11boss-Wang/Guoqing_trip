@@ -101,7 +101,7 @@
       padding: 26px;
       min-height: 270px;
     }
-    .label, .cost-item span, .flight span, .people span, .person-card span, .plan-block span {
+    .label, .cost-item span, .flight span, .people span, .person-card span, .plan-block span, .map-card span, .route-step span {
       display: block;
       color: #65736f;
       font-size: 13px;
@@ -180,7 +180,7 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 12px;
     }
-    .cost-item, .flight, .day, .people article, .person-card, .person-detail {
+    .cost-item, .flight, .day, .people article, .person-card, .person-detail, .map-card, .route-step {
       background: var(--paper);
       border: 1px solid var(--line);
       border-radius: 8px;
@@ -206,6 +206,65 @@
     }
     .flight h3 { margin: 14px 0 10px; font-size: 24px; }
     .flight small { color: var(--accent); font-weight: 800; }
+    .map-layout {
+      display: grid;
+      grid-template-columns: .9fr 1.1fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+    .map-canvas {
+      min-height: 430px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        radial-gradient(circle at 28% 22%, color-mix(in srgb, var(--accent) 28%, transparent) 0 5%, transparent 6%),
+        radial-gradient(circle at 72% 68%, rgba(243, 199, 116, .32) 0 6%, transparent 7%),
+        linear-gradient(145deg, #fffdf9, #f0e5d4);
+      position: relative;
+      overflow: hidden;
+      padding: 22px;
+    }
+    .map-canvas::before {
+      content: "";
+      position: absolute;
+      inset: 44px 28px;
+      border: 2px dashed color-mix(in srgb, var(--accent) 45%, #d8c8b5);
+      border-radius: 48% 52% 43% 57%;
+      transform: rotate(-10deg);
+    }
+    .map-node {
+      position: absolute;
+      width: min(190px, 42%);
+      background: rgba(255, 253, 249, .92);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      box-shadow: 0 12px 24px rgba(34, 31, 26, .10);
+    }
+    .map-node strong { display: block; margin-bottom: 5px; }
+    .map-node small { color: var(--muted); line-height: 1.45; }
+    .node-airport { left: 8%; top: 12%; }
+    .node-hotel { right: 7%; top: 20%; }
+    .node-food { left: 12%; bottom: 18%; }
+    .node-transit { right: 10%; bottom: 12%; }
+    .map-info {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .map-card h3, .route-step h3 { margin: 8px 0; font-size: 21px; }
+    .map-card p, .route-step p {
+      color: var(--muted);
+      line-height: 1.72;
+      margin-bottom: 0;
+    }
+    .route-strip {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 4px;
+    }
     .timeline { display: grid; gap: 10px; }
     .day {
       display: grid;
@@ -297,7 +356,9 @@
     }
     @media (max-width: 900px) {
       .hero { min-height: 92vh; }
-      .hero-grid, .controls, .two-col, .flight-grid, .people, .personal-grid, .person-detail { grid-template-columns: 1fr; }
+      .hero-grid, .controls, .two-col, .flight-grid, .people, .personal-grid, .person-detail, .map-layout, .map-info, .route-strip { grid-template-columns: 1fr; }
+      .map-canvas { min-height: 560px; }
+      .map-node { width: 76%; }
       .section-heading { display: block; }
       .switcher, .segmented { grid-auto-flow: row; width: 100%; }
       .switcher button, .segmented button, .toggle { width: 100%; }
@@ -365,6 +426,17 @@
         <p id="caution"></p>
       </div>
       <div class="cost-grid" id="costGrid"></div>
+    </section>
+
+    <section class="band">
+      <div class="section-heading">
+        <h2>地图与落点</h2>
+        <p>不依赖外部地图加载，直接给出机场、住宿区、餐厅和交通节点；需要导航时复制“地图搜索词”到高德、百度、Google 或 Yandex。</p>
+      </div>
+      <div class="map-layout">
+        <div class="map-canvas" id="mapCanvas"></div>
+        <div class="map-info" id="mapInfo"></div>
+      </div>
     </section>
 
     <section class="band" id="flightSection">
@@ -498,11 +570,32 @@
           ["Day 6", "&#x81EA;&#x7531;&#x5EA6;&#x5047;", "&#x65E9;&#x9910;&#x540E;&#x81EA;&#x7531;&#x6D6E;&#x6F5C;&#x3001;&#x76AE;&#x5212;&#x8247;&#x3001;&#x65C5;&#x62CD;&#xFF1B;&#x665A;&#x4E0A;&#x505A;&#x79BB;&#x5C9B;&#x524D;&#x805A;&#x9910;&#x3002;", 1800],
           ["Day 7", "&#x8FD4;&#x7A0B;", "&#x9000;&#x623F;&#x56DE;&#x9A6C;&#x7D2F;&#xFF0C;&#x9884;&#x7559;&#x5FEB;&#x8247;/&#x6C34;&#x98DE;&#x7F13;&#x51B2;&#xFF0C;&#x591C;&#x822A;&#x8FD4;&#x7A0B;&#x3002;", 900]
         ],
+        map: {
+          nodes: [
+            ["机场", "Velana International Airport (MLE)", "四地汇合点；到达大厅找度假村/酒店接待牌。", "node-airport"],
+            ["住宿", "Hulhumale + 北/南马累环礁", "第一晚住 Hulhumale，后5晚选快艇可达度假岛。", "node-hotel"],
+            ["饭店", "Hulhumale 海边餐厅带", "第一晚吃饭最方便，步行可到海滩和咖啡馆。", "node-food"],
+            ["交通", "快艇/水飞码头", "快艇柜台多在机场码头区，水飞需注意白天运营。", "node-transit"]
+          ],
+          cards: [
+            ["机场信息", "Velana International Airport / MLE", "搜索词：Velana International Airport。落地后先找酒店或度假村柜台；从国际到达到快艇区域通常步行约10-15分钟，晚到也有不少快艇接驳。"],
+            ["住宿建议", "Hulhumale 1晚 + 环礁度假岛5晚", "第一晚建议住 Hulhumale 过渡酒店，避免夜间赶水飞；主住宿优先选北马累或南马累环礁，快艇20-45分钟范围最省心。"],
+            ["饭店建议", "The Catch 78 / Thai Palace / Shell Beans", "Hulhumale 第一晚可选 The Catch 78 吃马代咖喱和海鲜，Thai Palace 偏稳妥，Shell Beans 适合咖啡甜点；上岛后以度假村餐厅为主。"],
+            ["地图搜索", "Maafushi / Dhigurah / Hulhumale Beach", "居民岛一日可搜 Maafushi 或 Dhigurah；只在指定 tourist beach 穿泳装，其他居民区注意着装。"]
+          ],
+          routeSteps: [
+            ["1", "MLE 机场集合", "王禹可提前或同日下午到；国内三人尽量10月1日傍晚前到。"],
+            ["2", "Hulhumale 过渡夜", "酒店接机/出租车10-20分钟，晚餐安排海边餐厅。"],
+            ["3", "快艇上岛", "第二天统一去快艇柜台，带好酒店确认单和护照。"],
+            ["4", "返程回 MLE", "10月7日预留半天回机场，避免水飞/快艇延误。"]
+          ]
+        },
         sources: [
           "Expedia/Skyscanner: &#x5317;&#x4EAC;-&#x9A6C;&#x7D2F;&#x5F80;&#x8FD4;&#x7EA6; USD645-708 &#x8D77;&#xFF0C;&#x963F;&#x63D0;&#x54C8;&#x5FB7;10&#x6708;&#x5317;&#x4EAC;-&#x9A6C;&#x7D2F;&#x7EA6; CNY4,954 &#x8D77;&#x3002;",
           "Trip.com/Expedia: &#x6210;&#x90FD;-&#x9A6C;&#x7D2F;&#x5F80;&#x8FD4;&#x7EA6; USD684-901 &#x8D77;&#x3002;",
           "Etihad/Skyscanner: &#x963F;&#x59C6;&#x65AF;&#x7279;&#x4E39;-&#x9A6C;&#x7D2F;10&#x6708;&#x5F80;&#x8FD4;&#x7EA6; EUR690 &#x6216; USD719 &#x8D77;&#x3002;",
-          "Booking/KAYAK/Skyscanner: &#x9A6C;&#x5C14;&#x4EE3;&#x592B;&#x5EA6;&#x5047;&#x6751;&#x5747;&#x4EF7;&#x6CE2;&#x52A8;&#x5927;&#xFF0C;4&#x661F;&#x7EA6; USD264 &#x8D77;&#xFF0C;&#x5EA6;&#x5047;&#x6751;&#x5468;&#x672B;&#x5747;&#x4EF7;&#x53EF;&#x5230; USD1,128+&#x3002;"
+          "Booking/KAYAK/Skyscanner: &#x9A6C;&#x5C14;&#x4EE3;&#x592B;&#x5EA6;&#x5047;&#x6751;&#x5747;&#x4EF7;&#x6CE2;&#x52A8;&#x5927;&#xFF0C;4&#x661F;&#x7EA6; USD264 &#x8D77;&#xFF0C;&#x5EA6;&#x5047;&#x6751;&#x5468;&#x672B;&#x5747;&#x4EF7;&#x53EF;&#x5230; USD1,128+&#x3002;",
+          "地图信息参考：Velana Airport 到快艇柜台需预留步行和接驳时间；Hulhumale 适合作为晚到过渡住宿，The Catch 78、Thai Palace、Shell Beans 是常见用餐搜索点。"
         ]
       },
       russia: {
@@ -533,11 +626,32 @@
           ["Day 6", "&#x90CA;&#x533A;&#x7687;&#x5BAB;", "&#x5F7C;&#x5F97;&#x970D;&#x592B;&#x6216;&#x53F6;&#x5361;&#x6377;&#x7433;&#x5A1C;&#x5BAB;&#x4E00;&#x65E5;&#xFF0C;&#x665A;&#x4E0A;&#x4FC4;&#x9910;&#x544A;&#x522B;&#x5C40;&#x3002;", 2600],
           ["Day 7", "&#x8FD4;&#x7A0B;", "&#x5723;&#x5F7C;&#x5F97;&#x5821;&#x56DE;&#x83AB;&#x65AF;&#x79D1;&#x6216;&#x8054;&#x7A0B;&#x8FD4;&#x822A;&#xFF0C;&#x9884;&#x7559;&#x8FB9;&#x68C0;&#x548C;&#x4E2D;&#x8F6C;&#x7F13;&#x51B2;&#x3002;", 900]
         ],
+        map: {
+          nodes: [
+            ["机场", "SVO / DME / VKO", "北京、成都、荷兰各自抵达莫斯科机场后进城汇合。", "node-airport"],
+            ["住宿", "莫斯科 Tverskoy/Arbat + 圣彼得堡 Nevsky", "住地铁和景点步行圈，减少打车和语言成本。", "node-hotel"],
+            ["饭店", "GUM / Nevsky Prospekt 餐厅带", "红场、涅瓦大街周边吃饭选择最多。", "node-food"],
+            ["交通", "Aeroexpress + 高铁", "机场快线进城，莫斯科到圣彼得堡坐高铁。", "node-transit"]
+          ],
+          cards: [
+            ["机场信息", "Sheremetyevo / Domodedovo / Vnukovo", "搜索词：Sheremetyevo Airport 或 Aeroexpress。SVO/DME 到市中心可用 Aeroexpress，通常约45-55分钟；VKO也有机场快线/地铁接驳。"],
+            ["住宿建议", "莫斯科 Tverskoy / Arbat / Yakimanka", "莫斯科3晚建议住红场、特维尔、阿尔巴特或花园环内；圣彼得堡3晚建议住 Nevsky Prospekt 或 Moskovsky Station 附近。"],
+            ["饭店建议", "Stolovaya 57 / Grabli / Yat / Marketplace", "莫斯科可选 GUM 内 Stolovaya 57、Grabli；想吃正式俄餐可看 Cafe Pushkin。圣彼得堡可选 Yat、Marketplace Nevsky 24、Pyshechnaya。"],
+            ["地图搜索", "Red Square / Kremlin / Nevsky Prospekt", "每日导航关键词：Red Square、Kremlin、Tretyakov Gallery、Leningradsky Station、Moskovsky Station、Hermitage Museum、Peterhof。"]
+          ],
+          routeSteps: [
+            ["1", "莫斯科机场进城", "各自到达后用 Aeroexpress/正规出租到市中心酒店。"],
+            ["2", "红场周边步行圈", "Day 1-3 以红场、克里姆林宫、画廊和地铁线为核心。"],
+            ["3", "高铁去圣彼得堡", "Leningradsky Station 出发，抵达 Moskovsky Station 后住 Nevsky 一带。"],
+            ["4", "回莫斯科返程", "10月6日晚或10月7日早回莫斯科，给国际航班留缓冲。"]
+          ]
+        },
         sources: [
           "Google Flights/Trip.com: &#x5317;&#x4EAC;-&#x83AB;&#x65AF;&#x79D1;&#x7EA6; USD680&#xFF0C;&#x6210;&#x90FD;-&#x83AB;&#x65AF;&#x79D1;&#x5F80;&#x8FD4;&#x7EA6; USD655 &#x8D77;&#x3002;",
           "Air Serbia/Turkish Airlines: &#x963F;&#x59C6;&#x65AF;&#x7279;&#x4E39;-&#x83AB;&#x65AF;&#x79D1;&#x7EA6; EUR606-995 &#x8D77;&#x3002;",
           "Skyscanner: &#x83AB;&#x65AF;&#x79D1;4&#x661F;&#x9152;&#x5E97;&#x5747;&#x4EF7;&#x7EA6; USD99/&#x665A;&#xFF0C;&#x5723;&#x5F7C;&#x5F97;&#x5821;4&#x661F;&#x4EF7;&#x683C;&#x901A;&#x5E38;&#x63A5;&#x8FD1;&#x83AB;&#x65AF;&#x79D1;&#x3002;",
-          "&#x7F8E;&#x56FD;&#x56FD;&#x52A1;&#x9662;&#x4ECD;&#x5C06;&#x4FC4;&#x7F57;&#x65AF;&#x5217;&#x4E3A; Level 4 Do Not Travel&#xFF1B;&#x8377;&#x5170;&#x51FA;&#x53D1;&#x6210;&#x5458;&#x9700;&#x53E6;&#x67E5;&#x672C;&#x56FD;&#x6700;&#x65B0;&#x65C5;&#x884C;&#x5EFA;&#x8BAE;&#x3002;"
+          "&#x7F8E;&#x56FD;&#x56FD;&#x52A1;&#x9662;&#x4ECD;&#x5C06;&#x4FC4;&#x7F57;&#x65AF;&#x5217;&#x4E3A; Level 4 Do Not Travel&#xFF1B;&#x8377;&#x5170;&#x51FA;&#x53D1;&#x6210;&#x5458;&#x9700;&#x53E6;&#x67E5;&#x672C;&#x56FD;&#x6700;&#x65B0;&#x65C5;&#x884C;&#x5EFA;&#x8BAE;&#x3002;",
+          "地图信息参考：Aeroexpress 连接 SVO/DME 等机场与莫斯科市区；莫斯科首住 Tverskoy/Arbat/Yakimanka，圣彼得堡首住 Nevsky Prospekt/Tsentralny 更便于步行游览。"
         ]
       }
     };
@@ -589,6 +703,30 @@
         ["&#x5EFA;&#x8BAE;&#x7ACB;&#x5373;&#x9501;&#x5B9A;", state.destination === "maldives" ? "&#x53EF;&#x9000;&#x5EA6;&#x5047;&#x5C9B; + &#x822A;&#x73ED;&#x4EF7;&#x683C;&#x63D0;&#x9192;" : "&#x7B7E;&#x8BC1;&#x8D44;&#x683C; + &#x73B0;&#x91D1;/&#x652F;&#x4ED8;&#x9884;&#x6848;"]
       ];
       document.getElementById("costGrid").innerHTML = costs.map(item => `<article class="cost-item"><span>${item[0]}</span><strong>${item[1]}</strong></article>`).join("");
+      document.getElementById("mapCanvas").innerHTML = data.map.nodes.map(node => `
+        <div class="map-node ${node[3]}">
+          <span>${node[0]}</span>
+          <strong>${node[1]}</strong>
+          <small>${node[2]}</small>
+        </div>
+      `).join("");
+      document.getElementById("mapInfo").innerHTML = data.map.cards.map(card => `
+        <article class="map-card">
+          <span>${card[0]}</span>
+          <h3>${card[1]}</h3>
+          <p>${card[2]}</p>
+        </article>
+      `).join("") + `
+        <div class="route-strip">
+          ${data.map.routeSteps.map(step => `
+            <article class="route-step">
+              <span>路线 ${step[0]}</span>
+              <h3>${step[1]}</h3>
+              <p>${step[2]}</p>
+            </article>
+          `).join("")}
+        </div>
+      `;
       document.getElementById("flightGrid").innerHTML = data.flights.map(flight => `
         <article class="flight">
           <span>${flight.from}</span>
