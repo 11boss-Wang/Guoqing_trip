@@ -626,7 +626,7 @@
       </div>
       <div class="flight-grid" id="flightGrid"></div>
       <div class="price-grid" id="livePriceGrid"></div>
-      <p class="fare-note">实时票价由订票平台打开后计算；本页不保存账号、不调用私有接口，适合直接发给国内外朋友查看。国庆票价波动很快，建议同一天由一个人集中查价并截图确认。</p>
+      <p class="fare-note">实时票价由订票平台打开后计算；本页不保存账号、不调用私有接口，适合直接发给国内外朋友查看。查价时把时间放宽到 9月30日21:00 后出发、10月9日当天返回，优先找这个区间内更便宜的机票和酒店组合。</p>
     </section>
 
     <section class="band">
@@ -945,8 +945,43 @@
       if (provider === "trip") {
         return `https://www.trip.com/flights/?searchWord=${text}`;
       }
+      if (provider === "qunar") {
+        return `https://touch.qunar.com/h5/flight/?keyword=${text}`;
+      }
+      if (provider === "fliggy") {
+        return `https://www.fliggy.com/search.htm?q=${text}`;
+      }
       return `https://www.google.com/travel/flights?q=${text}`;
     }
+
+    function hotelLink(provider, destination, query) {
+      const text = encodeURIComponent(query || destination);
+      if (provider === "ctrip") {
+        return `https://m.ctrip.com/webapp/hotel/?keyword=${text}`;
+      }
+      if (provider === "qunar") {
+        return `https://touch.qunar.com/h5/hotel/?keyword=${text}`;
+      }
+      if (provider === "fliggy") {
+        return `https://www.fliggy.com/search.htm?q=${text}`;
+      }
+      return `https://www.trip.com/hotels/list?city=${text}`;
+    }
+
+    const flexibleFareWindow = "弹性查价窗口：9月30日21:00后可以出发，10月9日当天可以返回。先查 10/2 出发、10/8-10/9 返回，再和 10/1-10/7 对比，国庆中间错峰通常更容易便宜。";
+
+    const hotelSearchRoutes = {
+      maldives: {
+        title: "马尔代夫酒店/机酒入口",
+        query: "Hulhumale Maldives hotel October 2026 Maldives resort",
+        note: "先查 Hulhumale 1晚过渡酒店，再查北马累/南马累环礁5-6晚度假岛；优先免费取消、含快艇接送、半食宿或一价全包。"
+      },
+      russia: {
+        title: "俄罗斯酒店/机酒入口",
+        query: "Saint Petersburg Nevsky Prospekt Moscow Tverskoy hotel October 2026",
+        note: "先查圣彼得堡 Nevsky/Tsentralny 3晚，再查莫斯科 Tverskoy/Arbat 3晚；优先地铁近、可取消、支持前台协助叫车。"
+      }
+    };
 
     const liveFareRoutes = {
       maldives: [
@@ -957,7 +992,8 @@
           flights: "EY889 + EY278 / EY279 + EY888",
           detail: "阿布扎比 AUH 中转；去程约13小时35分，返程可能涉及长中转，出票前确认行李直挂和过境住宿。",
           target: "建议锁价：¥5,000 - ¥7,200/人；低于 ¥6,300 可优先锁。",
-          origin: "PKX", destination: "MLE", depart: "2026-10-01", back: "2026-10-07"
+          origin: "PKX", destination: "MLE", depart: "2026-10-01", back: "2026-10-07",
+          query: "北京 PKX PEK 到 马累 MLE 2026年9月30日21点后 到 10月9日 返回 便宜机票"
         },
         {
           who: "王雪莹",
@@ -966,7 +1002,8 @@
           flights: "3U 直飞候选 / MU、CZ 中转备选",
           detail: "优先查川航季节直飞；若无直飞，广州/上海中转比新加坡中转更容易和国内成员同步。",
           target: "建议锁价：¥5,200 - ¥7,600/人；超过 ¥7,800 先改查 10/8 返回。",
-          origin: "TFU", destination: "MLE", depart: "2026-10-01", back: "2026-10-07"
+          origin: "TFU", destination: "MLE", depart: "2026-10-01", back: "2026-10-07",
+          query: "成都 TFU CTU 到 马累 MLE 2026年9月30日21点后 到 10月9日 返回 便宜机票"
         },
         {
           who: "王禹",
@@ -975,7 +1012,8 @@
           flights: "QR276 + QR676 / QR677 + QR275",
           detail: "多哈 DOH 中转；也可比价 Etihad/Emirates，优先同票号联程，避免分段行李风险。",
           target: "建议锁价：¥5,500 - ¥8,200/人；低于 ¥7,000 很值得锁。",
-          origin: "AMS", destination: "MLE", depart: "2026-10-01", back: "2026-10-07"
+          origin: "AMS", destination: "MLE", depart: "2026-10-01", back: "2026-10-07",
+          query: "Amsterdam AMS to Male MLE Sep 30 2026 after 21:00 return by Oct 9 2026 cheap flights"
         }
       ],
       russia: [
@@ -987,7 +1025,7 @@
           detail: "圣彼得堡入境，莫斯科离境；这是开口程，查价时可选“多城市/多程”。",
           target: "建议锁价：¥4,800 - ¥7,100/人；低于 ¥6,200 可优先锁。",
           origin: "PEK", destination: "LED", depart: "2026-10-01", back: "2026-10-07",
-          query: "PEK to LED Oct 1 2026 SVO to PEK Oct 7 2026 multicity flights"
+          query: "北京 PEK 到 圣彼得堡 LED 2026年9月30日21点后 莫斯科 SVO 到 北京 10月9日前 多城市 便宜机票"
         },
         {
           who: "王雪莹",
@@ -997,7 +1035,7 @@
           detail: "先查川航直飞运营日；如未运营，备选北京/上海中转，转机不低于2.5小时。",
           target: "建议锁价：¥4,700 - ¥6,900/人；超过 ¥7,200 先查北京汇合方案。",
           origin: "TFU", destination: "LED", depart: "2026-10-01", back: "2026-10-07",
-          query: "TFU to LED Oct 1 2026 SVO to TFU Oct 7 2026 multicity flights"
+          query: "成都 TFU 到 圣彼得堡 LED 2026年9月30日21点后 莫斯科 SVO 到 成都 10月9日前 多城市 便宜机票"
         },
         {
           who: "王禹",
@@ -1007,7 +1045,7 @@
           detail: "经伊斯坦布尔 SAW 中转；也查 Turkish/Air Serbia 备选，注意荷兰旅行建议和保险覆盖。",
           target: "建议锁价：¥4,800 - ¥8,500/人；低于 ¥7,000 可考虑锁。",
           origin: "AMS", destination: "LED", depart: "2026-09-30", back: "2026-10-08",
-          query: "AMS to LED Sep 30 2026 Moscow to AMS Oct 8 2026 flights"
+          query: "Amsterdam AMS to Saint Petersburg LED Sep 30 2026 after 21:00 Moscow to AMS return by Oct 9 2026 cheap flights"
         }
       ]
     };
@@ -1203,20 +1241,39 @@
           <small>${flight.count}&#x4EBA;&#xFF0C;&#x5C0F;&#x8BA1; ${money(flight.low * flight.count)} - ${money(flight.high * flight.count)}</small>
         </article>
       `).join("");
-      document.getElementById("livePriceGrid").innerHTML = liveFareRoutes[state.destination].map(route => `
+      const hotelSearch = hotelSearchRoutes[state.destination];
+      const fareCards = liveFareRoutes[state.destination].map(route => `
         <article class="price-card">
           <span class="live-badge">实时价格入口</span>
           <h3>${route.who}</h3>
           <p><strong>${route.route}</strong></p>
           <p>${route.dates}<br>${route.flights}<br>${route.detail}</p>
+          <p>${flexibleFareWindow}</p>
           <p><strong>${route.target}</strong></p>
           <div class="flight-actions">
             <a class="link-button primary" href="${searchLink("ctrip", route.origin, route.destination, route.depart, route.back, route.query)}" target="_blank" rel="noopener noreferrer">携程实时查价</a>
+            <a class="link-button" href="${searchLink("qunar", route.origin, route.destination, route.depart, route.back, route.query)}" target="_blank" rel="noopener noreferrer">去哪儿机票</a>
+            <a class="link-button" href="${searchLink("fliggy", route.origin, route.destination, route.depart, route.back, route.query)}" target="_blank" rel="noopener noreferrer">飞猪机票</a>
             <a class="link-button" href="${searchLink("trip", route.origin, route.destination, route.depart, route.back, route.query)}" target="_blank" rel="noopener noreferrer">Trip.com</a>
             <a class="link-button" href="${searchLink("google", route.origin, route.destination, route.depart, route.back, route.query)}" target="_blank" rel="noopener noreferrer">Google Flights</a>
           </div>
         </article>
       `).join("");
+      const hotelCard = `
+        <article class="price-card">
+          <span class="live-badge">酒店/机酒入口</span>
+          <h3>${hotelSearch.title}</h3>
+          <p>${hotelSearch.note}</p>
+          <p>${flexibleFareWindow}</p>
+          <div class="flight-actions">
+            <a class="link-button primary" href="${hotelLink("ctrip", state.destination, hotelSearch.query)}" target="_blank" rel="noopener noreferrer">携程酒店/机酒</a>
+            <a class="link-button" href="${hotelLink("qunar", state.destination, hotelSearch.query)}" target="_blank" rel="noopener noreferrer">去哪儿酒店</a>
+            <a class="link-button" href="${hotelLink("fliggy", state.destination, hotelSearch.query)}" target="_blank" rel="noopener noreferrer">飞猪</a>
+            <a class="link-button" href="${hotelLink("trip", state.destination, hotelSearch.query)}" target="_blank" rel="noopener noreferrer">Trip.com 酒店</a>
+          </div>
+        </article>
+      `;
+      document.getElementById("livePriceGrid").innerHTML = fareCards + hotelCard;
       document.getElementById("timeline").innerHTML = data.days.map(day => `
         <article class="day">
           <div class="date-pill">${day[0]}</div>
