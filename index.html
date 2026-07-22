@@ -223,8 +223,53 @@
       position: relative;
       overflow: hidden;
       padding: 22px;
+      touch-action: none;
+      user-select: none;
     }
-    .map-canvas::before {
+    .map-tools {
+      position: absolute;
+      z-index: 4;
+      top: 12px;
+      right: 12px;
+      display: grid;
+      grid-auto-flow: column;
+      gap: 6px;
+      background: rgba(255, 253, 249, .86);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 6px;
+      box-shadow: 0 12px 22px rgba(34, 31, 26, .10);
+    }
+    .map-tools button {
+      border: 0;
+      border-radius: 6px;
+      background: var(--paper);
+      color: var(--ink);
+      min-width: 38px;
+      height: 36px;
+      font-weight: 900;
+    }
+    .map-tools button:hover { background: color-mix(in srgb, var(--accent) 14%, white); }
+    .map-hint {
+      position: absolute;
+      z-index: 4;
+      left: 14px;
+      bottom: 12px;
+      color: var(--muted);
+      background: rgba(255, 253, 249, .86);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+    .map-world {
+      position: absolute;
+      inset: 0;
+      transform-origin: 0 0;
+      cursor: grab;
+    }
+    .map-world.dragging { cursor: grabbing; }
+    .map-world::before {
       content: "";
       position: absolute;
       inset: 44px 28px;
@@ -240,6 +285,7 @@
       border-radius: 8px;
       padding: 12px;
       box-shadow: 0 12px 24px rgba(34, 31, 26, .10);
+      z-index: 2;
     }
     .map-node strong { display: block; margin-bottom: 5px; }
     .map-node small { color: var(--muted); line-height: 1.45; }
@@ -818,6 +864,99 @@
       return "&#xA5;" + Math.round(value).toLocaleString("zh-CN");
     }
 
+    let mapView = { scale: 1, x: 0, y: 0 };
+
+    function resetMapView() {
+      mapView = { scale: 1, x: 0, y: 0 };
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function applyMapTransform() {
+      const world = document.getElementById("mapWorld");
+      if (!world) return;
+      world.style.transform = `translate(${mapView.x}px, ${mapView.y}px) scale(${mapView.scale})`;
+    }
+
+    function zoomMap(delta, originX, originY) {
+      const canvas = document.getElementById("mapCanvas");
+      const oldScale = mapView.scale;
+      const nextScale = clamp(oldScale * delta, 0.8, 2.6);
+      if (nextScale === oldScale || !canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const centerX = originX == null ? rect.width / 2 : originX - rect.left;
+      const centerY = originY == null ? rect.height / 2 : originY - rect.top;
+      mapView.x = centerX - ((centerX - mapView.x) / oldScale) * nextScale;
+      mapView.y = centerY - ((centerY - mapView.y) / oldScale) * nextScale;
+      mapView.scale = nextScale;
+      applyMapTransform();
+    }
+
+    function setupMapZoom() {
+      const canvas = document.getElementById("mapCanvas");
+      const world = document.getElementById("mapWorld");
+      if (!canvas || !world) return;
+
+      applyMapTransform();
+      canvas.querySelectorAll("[data-map-zoom]").forEach(button => {
+        button.addEventListener("click", () => {
+          if (button.dataset.mapZoom === "reset") {
+            resetMapView();
+            applyMapTransform();
+            return;
+          }
+          zoomMap(button.dataset.mapZoom === "in" ? 1.2 : 1 / 1.2);
+        });
+      });
+
+      canvas.addEventListener("wheel", event => {
+        event.preventDefault();
+        zoomMap(event.deltaY < 0 ? 1.12 : 1 / 1.12, event.clientX, event.clientY);
+      }, { passive: false });
+
+      let dragging = false;
+      let startX = 0;
+      let startY = 0;
+      let originX = 0;
+      let originY = 0;
+
+      canvas.addEventListener("pointerdown", event => {
+        if (event.target.closest(".map-tools, a")) return;
+        dragging = true;
+        startX = event.clientX;
+        startY = event.clientY;
+        originX = mapView.x;
+        originY = mapView.y;
+        world.classList.add("dragging");
+        canvas.setPointerCapture(event.pointerId);
+      });
+
+      canvas.addEventListener("pointermove", event => {
+        if (!dragging) return;
+        mapView.x = originX + event.clientX - startX;
+        mapView.y = originY + event.clientY - startY;
+        applyMapTransform();
+      });
+
+      function stopDrag(event) {
+        if (!dragging) return;
+        dragging = false;
+        world.classList.remove("dragging");
+        if (canvas.hasPointerCapture(event.pointerId)) {
+          canvas.releasePointerCapture(event.pointerId);
+        }
+      }
+
+      canvas.addEventListener("pointerup", stopDrag);
+      canvas.addEventListener("pointercancel", stopDrag);
+      canvas.addEventListener("lostpointercapture", () => {
+        dragging = false;
+        world.classList.remove("dragging");
+      });
+    }
+
     function getBudget(data) {
       const flightLow = data.flights.reduce((sum, item) => sum + item.low * item.count, 0);
       const flightHigh = data.flights.reduce((sum, item) => sum + item.high * item.count, 0);
@@ -861,13 +1000,24 @@
         ["&#x5EFA;&#x8BAE;&#x7ACB;&#x5373;&#x9501;&#x5B9A;", state.destination === "maldives" ? "&#x53EF;&#x9000;&#x5EA6;&#x5047;&#x5C9B; + &#x822A;&#x73ED;&#x4EF7;&#x683C;&#x63D0;&#x9192;" : "&#x7B7E;&#x8BC1;&#x8D44;&#x683C; + &#x73B0;&#x91D1;/&#x652F;&#x4ED8;&#x9884;&#x6848;"]
       ];
       document.getElementById("costGrid").innerHTML = costs.map(item => `<article class="cost-item"><span>${item[0]}</span><strong>${item[1]}</strong></article>`).join("");
-      document.getElementById("mapCanvas").innerHTML = data.map.nodes.map(node => `
-        <div class="map-node ${node[3]}">
-          <span>${node[0]}</span>
-          <strong>${node[1]}</strong>
-          <small>${node[2]}</small>
+      document.getElementById("mapCanvas").innerHTML = `
+        <div class="map-tools" aria-label="地图缩放控制">
+          <button type="button" data-map-zoom="in" title="放大">+</button>
+          <button type="button" data-map-zoom="out" title="缩小">-</button>
+          <button type="button" data-map-zoom="reset" title="重置">1:1</button>
         </div>
-      `).join("");
+        <div class="map-world" id="mapWorld">
+          ${data.map.nodes.map(node => `
+            <div class="map-node ${node[3]}">
+              <span>${node[0]}</span>
+              <strong>${node[1]}</strong>
+              <small>${node[2]}</small>
+            </div>
+          `).join("")}
+        </div>
+        <div class="map-hint">滚轮/双指缩放，按住拖动地图</div>
+      `;
+      setupMapZoom();
       document.getElementById("mapInfo").innerHTML = data.map.cards.map(card => `
         <article class="map-card">
           <span>${card[0]}</span>
@@ -954,8 +1104,8 @@
       document.getElementById("sources").innerHTML = data.sources.map(source => `<p>${source}</p>`).join("");
     }
 
-    document.getElementById("btn-maldives").addEventListener("click", () => { state.destination = "maldives"; render(); });
-    document.getElementById("btn-russia").addEventListener("click", () => { state.destination = "russia"; render(); });
+    document.getElementById("btn-maldives").addEventListener("click", () => { state.destination = "maldives"; resetMapView(); render(); });
+    document.getElementById("btn-russia").addEventListener("click", () => { state.destination = "russia"; resetMapView(); render(); });
     document.querySelectorAll("[data-tier]").forEach(btn => btn.addEventListener("click", () => { state.hotelTier = btn.dataset.tier; render(); }));
     document.getElementById("activity").addEventListener("input", event => { state.activityLevel = Number(event.target.value); render(); });
     document.getElementById("buffer").addEventListener("input", event => { state.buffer = Number(event.target.value); render(); });
