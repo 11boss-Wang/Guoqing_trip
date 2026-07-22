@@ -447,6 +447,81 @@
     }
     .flight-detail td strong { display: block; }
     .flight-detail small { color: var(--muted); }
+    .price-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 16px;
+    }
+    .price-card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      box-shadow: 0 14px 32px rgba(34, 31, 26, .08);
+    }
+    .price-card h3 {
+      margin: 8px 0 8px;
+      font-size: 22px;
+    }
+    .price-card p {
+      color: var(--muted);
+      line-height: 1.65;
+      margin-bottom: 10px;
+    }
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--accent) 12%, white);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .live-badge::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .flight-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .link-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 9px 12px;
+      border-radius: 7px;
+      border: 1px solid var(--line);
+      background: #f8f2e8;
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 900;
+    }
+    .link-button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+    .fare-note {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      background: #fff7e6;
+      border: 1px solid #efd9a8;
+      color: #6d5521;
+      line-height: 1.65;
+      font-size: 13px;
+    }
     .sources { padding-bottom: 70px; }
     .sources p {
       border-left: 4px solid var(--accent);
@@ -460,7 +535,7 @@
     }
     @media (max-width: 900px) {
       .hero { min-height: 92vh; }
-      .hero-grid, .controls, .two-col, .flight-grid, .people, .personal-grid, .person-detail, .map-layout, .map-info, .route-strip, .map-links { grid-template-columns: 1fr; }
+      .hero-grid, .controls, .two-col, .flight-grid, .people, .personal-grid, .person-detail, .map-layout, .map-info, .route-strip, .map-links, .price-grid { grid-template-columns: 1fr; }
       .map-canvas { min-height: 560px; }
       .map-node { width: 76%; }
       .flight-detail { display: block; overflow-x: auto; }
@@ -550,6 +625,8 @@
         <p>&#x6309;2026&#x5E74;7&#x6708;22&#x65E5;&#x53EF;&#x67E5;&#x516C;&#x5F00;&#x4EF7;&#x683C;&#x533A;&#x95F4;&#x6298;&#x7B97;&#x4EBA;&#x6C11;&#x5E01;&#xFF0C;&#x56FD;&#x5E86;&#x6B63;&#x65E5;&#x51FA;&#x53D1;&#x9700;&#x4EE5;&#x51FA;&#x7968;&#x9875;&#x4E3A;&#x51C6;&#x3002;</p>
       </div>
       <div class="flight-grid" id="flightGrid"></div>
+      <div class="price-grid" id="livePriceGrid"></div>
+      <p class="fare-note">实时票价由订票平台打开后计算；本页不保存账号、不调用私有接口，适合直接发给国内外朋友查看。国庆票价波动很快，建议同一天由一个人集中查价并截图确认。</p>
     </section>
 
     <section class="band">
@@ -860,6 +937,81 @@
       }
     };
 
+    function searchLink(provider, origin, destination, departDate, returnDate, query) {
+      const text = encodeURIComponent(query || `${origin} to ${destination} ${departDate} ${returnDate || ""} flights`);
+      if (provider === "ctrip") {
+        return `https://m.ctrip.com/html5/flight/home?keyword=${text}`;
+      }
+      if (provider === "trip") {
+        return `https://www.trip.com/flights/?searchWord=${text}`;
+      }
+      return `https://www.google.com/travel/flights?q=${text}`;
+    }
+
+    const liveFareRoutes = {
+      maldives: [
+        {
+          who: "王慧 / 刘博文",
+          route: "北京大兴 PKX ⇄ 马累 MLE",
+          dates: "去程 2026-10-01，返程 2026-10-07/10-08",
+          flights: "EY889 + EY278 / EY279 + EY888",
+          detail: "阿布扎比 AUH 中转；去程约13小时35分，返程可能涉及长中转，出票前确认行李直挂和过境住宿。",
+          target: "建议锁价：¥5,000 - ¥7,200/人；低于 ¥6,300 可优先锁。",
+          origin: "PKX", destination: "MLE", depart: "2026-10-01", back: "2026-10-07"
+        },
+        {
+          who: "王雪莹",
+          route: "成都天府 TFU ⇄ 马累 MLE",
+          dates: "去程 2026-10-01，返程 2026-10-07",
+          flights: "3U 直飞候选 / MU、CZ 中转备选",
+          detail: "优先查川航季节直飞；若无直飞，广州/上海中转比新加坡中转更容易和国内成员同步。",
+          target: "建议锁价：¥5,200 - ¥7,600/人；超过 ¥7,800 先改查 10/8 返回。",
+          origin: "TFU", destination: "MLE", depart: "2026-10-01", back: "2026-10-07"
+        },
+        {
+          who: "王禹",
+          route: "阿姆斯特丹 AMS ⇄ 马累 MLE",
+          dates: "去程 2026-10-01，返程 2026-10-07",
+          flights: "QR276 + QR676 / QR677 + QR275",
+          detail: "多哈 DOH 中转；也可比价 Etihad/Emirates，优先同票号联程，避免分段行李风险。",
+          target: "建议锁价：¥5,500 - ¥8,200/人；低于 ¥7,000 很值得锁。",
+          origin: "AMS", destination: "MLE", depart: "2026-10-01", back: "2026-10-07"
+        }
+      ],
+      russia: [
+        {
+          who: "王慧 / 刘博文",
+          route: "北京首都 PEK → 圣彼得堡 LED；莫斯科 SVO → 北京 PEK",
+          dates: "去程 2026-10-01，返程 2026-10-07",
+          flights: "HU7965 / CA910，城际 Sapsan 高铁",
+          detail: "圣彼得堡入境，莫斯科离境；这是开口程，查价时可选“多城市/多程”。",
+          target: "建议锁价：¥4,800 - ¥7,100/人；低于 ¥6,200 可优先锁。",
+          origin: "PEK", destination: "LED", depart: "2026-10-01", back: "2026-10-07",
+          query: "PEK to LED Oct 1 2026 SVO to PEK Oct 7 2026 multicity flights"
+        },
+        {
+          who: "王雪莹",
+          route: "成都天府 TFU → 圣彼得堡 LED；莫斯科 SVO → 成都 TFU",
+          dates: "去程 2026-10-01，返程 2026-10-07",
+          flights: "3U3815 / 3U3888，城际 Sapsan 高铁",
+          detail: "先查川航直飞运营日；如未运营，备选北京/上海中转，转机不低于2.5小时。",
+          target: "建议锁价：¥4,700 - ¥6,900/人；超过 ¥7,200 先查北京汇合方案。",
+          origin: "TFU", destination: "LED", depart: "2026-10-01", back: "2026-10-07",
+          query: "TFU to LED Oct 1 2026 SVO to TFU Oct 7 2026 multicity flights"
+        },
+        {
+          who: "王禹",
+          route: "阿姆斯特丹 AMS → 圣彼得堡 LED；莫斯科 VKO/SVO → 阿姆斯特丹 AMS",
+          dates: "去程 2026-09-30/10-01，返程 2026-10-08",
+          flights: "PC1258 + VF293 / VF277 + VF1",
+          detail: "经伊斯坦布尔 SAW 中转；也查 Turkish/Air Serbia 备选，注意荷兰旅行建议和保险覆盖。",
+          target: "建议锁价：¥4,800 - ¥8,500/人；低于 ¥7,000 可考虑锁。",
+          origin: "AMS", destination: "LED", depart: "2026-09-30", back: "2026-10-08",
+          query: "AMS to LED Sep 30 2026 Moscow to AMS Oct 8 2026 flights"
+        }
+      ]
+    };
+
     function money(value) {
       return "&#xA5;" + Math.round(value).toLocaleString("zh-CN");
     }
@@ -1051,6 +1203,20 @@
           <small>${flight.count}&#x4EBA;&#xFF0C;&#x5C0F;&#x8BA1; ${money(flight.low * flight.count)} - ${money(flight.high * flight.count)}</small>
         </article>
       `).join("");
+      document.getElementById("livePriceGrid").innerHTML = liveFareRoutes[state.destination].map(route => `
+        <article class="price-card">
+          <span class="live-badge">实时价格入口</span>
+          <h3>${route.who}</h3>
+          <p><strong>${route.route}</strong></p>
+          <p>${route.dates}<br>${route.flights}<br>${route.detail}</p>
+          <p><strong>${route.target}</strong></p>
+          <div class="flight-actions">
+            <a class="link-button primary" href="${searchLink("ctrip", route.origin, route.destination, route.depart, route.back, route.query)}" target="_blank" rel="noopener noreferrer">携程实时查价</a>
+            <a class="link-button" href="${searchLink("trip", route.origin, route.destination, route.depart, route.back, route.query)}" target="_blank" rel="noopener noreferrer">Trip.com</a>
+            <a class="link-button" href="${searchLink("google", route.origin, route.destination, route.depart, route.back, route.query)}" target="_blank" rel="noopener noreferrer">Google Flights</a>
+          </div>
+        </article>
+      `).join("");
       document.getElementById("timeline").innerHTML = data.days.map(day => `
         <article class="day">
           <div class="date-pill">${day[0]}</div>
@@ -1067,6 +1233,7 @@
       `).join("");
       const person = people.find(item => item.id === state.selectedPerson);
       const plan = personPlans[state.destination][state.selectedPerson];
+      const personRoute = liveFareRoutes[state.destination].find(route => route.who.includes(person.name)) || liveFareRoutes[state.destination][0];
       const flightRows = detailedFlights[state.destination][state.selectedPerson].map(row => `
         <tr>
           <td><strong>${row[0]}</strong></td>
@@ -1076,6 +1243,7 @@
           <td>${row[4]}</td>
           <td>${row[5]}</td>
           <td><small>${row[6]}</small></td>
+          <td><a class="link-button" href="${searchLink("ctrip", personRoute.origin, personRoute.destination, personRoute.depart, personRoute.back, personRoute.query)}" target="_blank" rel="noopener noreferrer">查实时价</a></td>
         </tr>
       `).join("");
       document.getElementById("personDetail").innerHTML = `
@@ -1095,6 +1263,7 @@
               <th>到达地</th>
               <th>落地时间</th>
               <th>中转/备注</th>
+              <th>实时查价</th>
             </tr>
           </thead>
           <tbody>${flightRows}</tbody>
