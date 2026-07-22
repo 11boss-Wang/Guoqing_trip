@@ -258,6 +258,34 @@
       line-height: 1.72;
       margin-bottom: 0;
     }
+    .map-links {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .map-link {
+      display: block;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      color: var(--ink);
+      text-decoration: none;
+      transition: border-color .2s ease, transform .2s ease;
+    }
+    .map-link:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+    .map-link strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+    .map-link small {
+      color: var(--muted);
+      line-height: 1.45;
+    }
     .route-strip {
       grid-column: 1 / -1;
       display: grid;
@@ -386,7 +414,7 @@
     }
     @media (max-width: 900px) {
       .hero { min-height: 92vh; }
-      .hero-grid, .controls, .two-col, .flight-grid, .people, .personal-grid, .person-detail, .map-layout, .map-info, .route-strip { grid-template-columns: 1fr; }
+      .hero-grid, .controls, .two-col, .flight-grid, .people, .personal-grid, .person-detail, .map-layout, .map-info, .route-strip, .map-links { grid-template-columns: 1fr; }
       .map-canvas { min-height: 560px; }
       .map-node { width: 76%; }
       .flight-detail { display: block; overflow-x: auto; }
@@ -462,7 +490,7 @@
     <section class="band">
       <div class="section-heading">
         <h2>地图与落点</h2>
-        <p>不依赖外部地图加载，直接给出机场、住宿区、餐厅和交通节点；需要导航时复制“地图搜索词”到高德、百度、Google 或 Yandex。</p>
+        <p>不依赖外部地图加载，直接给出机场、住宿区、餐厅和交通节点；Google Maps 链接适合境外查看，国内打不开时复制名称到高德、百度或 Yandex。</p>
       </div>
       <div class="map-layout">
         <div class="map-canvas" id="mapCanvas"></div>
@@ -619,6 +647,14 @@
             ["2", "Hulhumale 过渡夜", "酒店接机/出租车10-20分钟，晚餐安排海边餐厅。"],
             ["3", "快艇上岛", "第二天统一去快艇柜台，带好酒店确认单和护照。"],
             ["4", "返程回 MLE", "10月7日预留半天回机场，避免水飞/快艇延误。"]
+          ],
+          googleMaps: [
+            ["Velana International Airport (MLE)", "机场集合点", "https://www.google.com/maps/search/?api=1&query=Velana+International+Airport+MLE"],
+            ["Hulhumale", "第一晚过渡住宿区", "https://www.google.com/maps/search/?api=1&query=Hulhumale+Maldives"],
+            ["Hulhumale Beach", "第一晚散步和餐厅区域", "https://www.google.com/maps/search/?api=1&query=Hulhumale+Beach+Maldives"],
+            ["The Catch 78", "Hulhumale 海鲜/马代菜候选", "https://www.google.com/maps/search/?api=1&query=The+Catch+78+Hulhumale"],
+            ["Thai Palace Hulhumale", "稳妥餐厅候选", "https://www.google.com/maps/search/?api=1&query=Thai+Palace+Hulhumale"],
+            ["Maafushi", "居民岛一日游搜索点", "https://www.google.com/maps/search/?api=1&query=Maafushi+Maldives"]
           ]
         },
         sources: [
@@ -705,6 +741,16 @@
         ["2", "圣彼得堡3天", "冬宫、涅瓦大街、滴血救世主、彼得霍夫或叶卡捷琳娜宫。"],
         ["3", "高铁去莫斯科", "Moskovsky Station 出发，抵达 Moscow Leningradsky Station 后入住市中心。"],
         ["4", "莫斯科返程", "红场和克里姆林宫后，从 SVO/DME/VKO 返程。"]
+      ],
+      googleMaps: [
+        ["Pulkovo Airport (LED)", "圣彼得堡入境机场", "https://www.google.com/maps/search/?api=1&query=Pulkovo+Airport+LED"],
+        ["Nevsky Prospekt", "圣彼得堡住宿和晚餐主轴", "https://www.google.com/maps/search/?api=1&query=Nevsky+Prospekt+Saint+Petersburg"],
+        ["Hermitage Museum", "冬宫与宫殿广场", "https://www.google.com/maps/search/?api=1&query=Hermitage+Museum+Saint+Petersburg"],
+        ["Moskovsky Station", "圣彼得堡高铁出发站", "https://www.google.com/maps/search/?api=1&query=Moskovsky+Railway+Station+Saint+Petersburg"],
+        ["Leningradsky Station", "莫斯科高铁到达站", "https://www.google.com/maps/search/?api=1&query=Leningradsky+Railway+Station+Moscow"],
+        ["Red Square", "莫斯科核心景点", "https://www.google.com/maps/search/?api=1&query=Red+Square+Moscow"],
+        ["Sheremetyevo Airport (SVO)", "莫斯科返程机场候选", "https://www.google.com/maps/search/?api=1&query=Sheremetyevo+International+Airport+SVO"],
+        ["Cafe Pushkin", "莫斯科正式俄餐候选", "https://www.google.com/maps/search/?api=1&query=Cafe+Pushkin+Moscow"]
       ]
     };
 
@@ -829,6 +875,14 @@
           <p>${card[2]}</p>
         </article>
       `).join("") + `
+        <div class="map-links">
+          ${data.map.googleMaps.map(link => `
+            <a class="map-link" href="${link[2]}" target="_blank" rel="noopener noreferrer">
+              <strong>${link[0]}</strong>
+              <small>Google Maps · ${link[1]}</small>
+            </a>
+          `).join("")}
+        </div>
         <div class="route-strip">
           ${data.map.routeSteps.map(step => `
             <article class="route-step">
